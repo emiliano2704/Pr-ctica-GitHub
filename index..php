@@ -28,8 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['borrar'])) {
     exit;
 }
 
-// 3. LEER (Obtener todos los productos)
-$stmt = $pdo->query('SELECT * FROM productos_tecnologicos ORDER BY id DESC');
+// 3. LEER (Buscar productos por nombre, categoría o marca)
+$busqueda = isset($_GET['buscar']) && is_string($_GET['buscar']) ? trim($_GET['buscar']) : '';
+if ($busqueda !== '') {
+    $termino = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $busqueda) . '%';
+    $stmt = $pdo->prepare("SELECT * FROM productos_tecnologicos WHERE nombre LIKE ? ESCAPE '!' OR categoria LIKE ? ESCAPE '!' OR marca LIKE ? ESCAPE '!' ORDER BY id DESC");
+    $stmt->execute([$termino, $termino, $termino]);
+} else {
+    $stmt = $pdo->query('SELECT * FROM productos_tecnologicos ORDER BY id DESC');
+}
 $productos = $stmt->fetchAll();
 ?>
 
@@ -65,14 +72,20 @@ $productos = $stmt->fetchAll();
         button:focus-visible, .button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; } button:hover, .button:hover { transform: translateY(-1px); }
         .save { width: 100%; background: var(--accent); color: #052119; } .save:hover { background: #98f8d8; } .save::after { margin-left: 8px; content: "→"; }
         .inventory-meta { display: flex; align-items: center; gap: 8px; } .inventory-meta strong { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 50%; background: #203250; color: #c7dcff; font-size: .72rem; }
+        .search-form { display: flex; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+        .search-form input { flex: 1; min-width: 0; }
+        .search-form button { background: var(--accent); color: #052119; }
+        .search-form button:hover { background: #98f8d8; }
+        .clear-search { align-self: center; color: var(--muted); font-size: .8rem; text-decoration: none; }
+        .clear-search:hover { color: var(--accent); }
         .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 15px 18px; border-bottom: 1px solid #233048; text-align: left; } th { color: #91a2bf; font-size: .7rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; } td { font-size: .86rem; } tbody tr { transition: background-color 160ms ease; } tbody tr:hover { background: #182238; }
         .product-name { color: #fff; font-weight: 700; } .product-id { color: #8291a9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; } .category { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: #233454; color: #c1d6ff; font-size: .72rem; font-weight: 700; }
         .price { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; } .stock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; } .actions { display: flex; align-items: center; gap: 7px; } .button { min-height: 33px; border-color: #40516e; background: transparent; color: #dce8ff; } .button:hover { border-color: var(--focus); background: #22314d; }
         .actions form { margin: 0; } .btn-delete { min-height: 33px; background: transparent; border-color: #754050; color: #ffadba; } .btn-delete:hover { background: #3a1824; border-color: var(--danger); }
-        .empty { padding: 56px 20px; color: var(--muted); text-align: center; } .empty::before { display: block; margin-bottom: 9px; color: var(--accent); font-family: ui-monospace, monospace; font-size: 1rem; content: "[ INVENTARIO VACÍO ]"; }
+        .empty { padding: 56px 20px; color: var(--muted); text-align: center; } .empty::before { display: block; margin-bottom: 9px; color: var(--accent); font-family: ui-monospace, monospace; font-size: 1rem; content: "[ INVENTARIO VACÍO ]"; } .empty-search::before { content: "[ SIN RESULTADOS ]"; }
         @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .intro { align-items: start; flex-direction: column; } }
-        @media (max-width: 580px) { main { width: min(100% - 28px, 1280px); padding-top: 20px; } .topbar { align-items: flex-start; flex-direction: column; padding-bottom: 20px; } .intro { padding: 36px 0 26px; } .intro h2 { font-size: 2.2rem; } .split-fields { grid-template-columns: 1fr; } .system-status { display: none; } }
+        @media (max-width: 580px) { main { width: min(100% - 28px, 1280px); padding-top: 20px; } .topbar { align-items: flex-start; flex-direction: column; padding-bottom: 20px; } .intro { padding: 36px 0 26px; } .intro h2 { font-size: 2.2rem; } .split-fields { grid-template-columns: 1fr; } .system-status { display: none; } .search-form { flex-wrap: wrap; } .search-form input { flex-basis: 100%; } }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
     </style>
 </head>
@@ -95,6 +108,11 @@ $productos = $stmt->fetchAll();
     </section>
     <section class="panel">
     <div class="panel-header"><h3>Inventario en tiempo real</h3><div class="inventory-meta"><strong><?= count($productos) ?></strong><span>ACTIVOS</span></div></div>
+    <form class="search-form" method="GET" action="index.php" role="search">
+        <input type="search" name="buscar" aria-label="Buscar productos" placeholder="Buscar por nombre, categoría o marca" value="<?= htmlspecialchars($busqueda, ENT_QUOTES, 'UTF-8') ?>">
+        <button type="submit">Buscar</button>
+        <?php if ($busqueda !== ''): ?><a class="clear-search" href="index.php">Limpiar</a><?php endif; ?>
+    </form>
     <div class="table-wrap">
     <table>
         <thead>
@@ -110,7 +128,7 @@ $productos = $stmt->fetchAll();
         </thead>
         <tbody>
             <?php if (!$productos): ?>
-            <tr><td class="empty" colspan="7">Aún no hay productos registrados.</td></tr>
+            <tr><td class="empty<?= $busqueda !== '' ? ' empty-search' : '' ?>" colspan="7"><?= $busqueda !== '' ? 'No se encontraron productos para esta búsqueda.' : 'Aún no hay productos registrados.' ?></td></tr>
             <?php endif; ?>
             <?php foreach ($productos as $producto): ?>
             <tr>
