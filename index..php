@@ -38,6 +38,12 @@ if ($busqueda !== '') {
     $stmt = $pdo->query('SELECT * FROM productos_tecnologicos ORDER BY id DESC');
 }
 $productos = $stmt->fetchAll();
+
+// 4. EXPORTAR (Descargar inventario en CSV)
+if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
+    require __DIR__ . '/exportar_csv.php';
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -61,7 +67,7 @@ $productos = $stmt->fetchAll();
         .intro p { max-width: 43ch; margin: 0; color: var(--muted); line-height: 1.6; }
         .workspace { display: grid; grid-template-columns: minmax(290px, .8fr) minmax(0, 1.7fr); gap: 22px; align-items: start; }
         .panel { background: linear-gradient(145deg, #141c2e, #101625); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-        .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
         .panel h3 { margin: 0; font-size: .95rem; letter-spacing: -.01em; } .panel-header span { color: var(--muted); font-size: .75rem; }
         .form-panel form { display: grid; gap: 16px; padding: 22px; }
         label { display: grid; gap: 7px; color: var(--muted); font-size: .76rem; font-weight: 700; letter-spacing: .015em; }
@@ -72,6 +78,10 @@ $productos = $stmt->fetchAll();
         button:focus-visible, .button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; } button:hover, .button:hover { transform: translateY(-1px); }
         .save { width: 100%; background: var(--accent); color: #052119; } .save:hover { background: #98f8d8; } .save::after { margin-left: 8px; content: "→"; }
         .inventory-meta { display: flex; align-items: center; gap: 8px; } .inventory-meta strong { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 50%; background: #203250; color: #c7dcff; font-size: .72rem; }
+        .panel-actions { display: flex; align-items: center; gap: 10px; }
+        .btn-export { min-height: 33px; padding: 6px 12px; border-color: #364966; background: #141c2d; color: #bed2f4; font-size: .78rem; text-decoration: none; gap: 6px; }
+        .btn-export:hover { border-color: var(--accent); background: #1b273d; color: #ffffff; }
+        .btn-export svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .search-form { display: flex; gap: 10px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
         .search-form input { flex: 1; min-width: 0; }
         .search-form button { background: var(--accent); color: #052119; }
@@ -107,7 +117,16 @@ $productos = $stmt->fetchAll();
         </form>
     </section>
     <section class="panel">
-    <div class="panel-header"><h3>Inventario en tiempo real</h3><div class="inventory-meta"><strong><?= count($productos) ?></strong><span>ACTIVOS</span></div></div>
+    <div class="panel-header">
+        <h3>Inventario en tiempo real</h3>
+        <div class="panel-actions">
+            <div class="inventory-meta"><strong><?= count($productos) ?></strong><span>ACTIVOS</span></div>
+            <a class="button btn-export" href="exportar_csv.php<?= $busqueda !== '' ? '?buscar=' . urlencode($busqueda) : '' ?>" title="Exportar a archivo CSV">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar CSV
+            </a>
+        </div>
+    </div>
     <form class="search-form" method="GET" action="index.php" role="search">
         <input type="search" name="buscar" aria-label="Buscar productos" placeholder="Buscar por nombre, categoría o marca" value="<?= htmlspecialchars($busqueda, ENT_QUOTES, 'UTF-8') ?>">
         <button type="submit">Buscar</button>
