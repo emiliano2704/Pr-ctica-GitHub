@@ -91,7 +91,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
         .table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { padding: 15px 18px; border-bottom: 1px solid #233048; text-align: left; } th { color: #91a2bf; font-size: .7rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; } td { font-size: .86rem; } tbody tr { transition: background-color 160ms ease; } tbody tr:hover { background: #182238; }
         .product-name { color: #fff; font-weight: 700; } .product-id { color: #8291a9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .76rem; } .category { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: #233454; color: #c1d6ff; font-size: .72rem; font-weight: 700; }
-        .price { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; } .stock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; } .actions { display: flex; align-items: center; gap: 7px; } .button { min-height: 33px; border-color: #40516e; background: transparent; color: #dce8ff; } .button:hover { border-color: var(--focus); background: #22314d; }
+        .price { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; } .stock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; } .stock-status { display: inline-block; margin-left: 7px; padding: 3px 6px; border-radius: 5px; background: #453620; color: #ffd28a; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: .7rem; font-weight: 700; } .stock-status.out { background: #482635; color: #ffadba; } .actions { display: flex; align-items: center; gap: 7px; } .button { min-height: 33px; border-color: #40516e; background: transparent; color: #dce8ff; } .button:hover { border-color: var(--focus); background: #22314d; }
         .actions form { margin: 0; } .btn-delete { min-height: 33px; background: transparent; border-color: #754050; color: #ffadba; } .btn-delete:hover { background: #3a1824; border-color: var(--danger); }
         .empty { padding: 56px 20px; color: var(--muted); text-align: center; } .empty::before { display: block; margin-bottom: 9px; color: var(--accent); font-family: ui-monospace, monospace; font-size: 1rem; content: "[ INVENTARIO VACÍO ]"; } .empty-search::before { content: "[ SIN RESULTADOS ]"; }
         @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .intro { align-items: start; flex-direction: column; } }
@@ -156,7 +156,7 @@ if (isset($_GET['exportar']) && $_GET['exportar'] === 'csv') {
                 <td><span class="category"><?= htmlspecialchars($producto['categoria']) ?></span></td>
                 <td><?= htmlspecialchars($producto['marca']) ?></td>
                 <td class="price">$<?= number_format((float) $producto['precio'], 2) ?></td>
-                <td class="stock"><?= htmlspecialchars($producto['stock']) ?></td>
+                <td class="stock"><?= htmlspecialchars($producto['stock']) ?><?php if ((int) $producto['stock'] === 0): ?><span class="stock-status out">Agotado</span><?php elseif ((int) $producto['stock'] <= 5): ?><span class="stock-status">Bajo</span><?php endif; ?></td>
                 <td class="actions">
                     <a class="button" href="editar.php?id=<?= $producto['id'] ?>">Editar</a>
                     <form method="POST" onsubmit="return confirm('¿Eliminar este producto del inventario?')">
